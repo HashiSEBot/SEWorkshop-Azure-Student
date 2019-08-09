@@ -804,9 +804,14 @@ terraform init
 
 Output:
 ```tex
+Initializing the backend...
+
+Successfully configured the backend "remote"! Terraform will automatically
+use this backend unless the backend configuration changes.
+
 Initializing provider plugins...
-- Checking for available provider plugins on https://releases.hashicorp.com...
-- Downloading plugin for provider "azurerm" (1.30.1)...
+- Checking for available provider plugins...
+- Downloading plugin for provider "azurerm" (terraform-providers/azurerm) 1.30.1...
 
 Terraform has been successfully initialized!
 ```
@@ -826,35 +831,18 @@ When you run **`terraform plan`**, you should see output that looks like this:
 ```tex
 Terraform will perform the following actions:
 
-  + azurerm_resource_group.hashitraining
-      id:       <computed>
-      location: "centralus"
-      name:     "bugsbunny-workshop"
-      tags.%:   <computed>
-
+  # azurerm_resource_group.hashitraining will be created
+  + resource "azurerm_resource_group" "hashitraining" {
+      + id       = (known after apply)
+      + location = "eastus"
+      + name     = "student1-test-workshop-workshop"
+      + tags     = (known after apply)
+    }
 
 Plan: 1 to add, 0 to change, 0 to destroy.
 ```
 
 We are not actually building anything yet. This is just a dry run, showing us what would happen if we applied our change.
-
----
-name: terraform-plan-3
-Optional - Save Your Plan
--------------------------
-<br><br><br>
-You may have noticed this output when you ran **`terraform plan`**:
-
-```tex
-Note: You didn't specify an "-out" parameter to save this plan, so Terraform
-can't guarantee that exactly these actions will be performed if
-"terraform apply" is subsequently run.
-```
-
-If you specify the -out parameter, you can save your Terraform plan in a file and run it later.
-
-???
-Why might you want to do this? Maybe you have a maintenance window and can only implement changes on Friday evening. But you'd like to do the dry run on Friday afternoon. So you run the plan, have it approved, and save it for deployment later that night.
 
 ---
 name: defining-variables
@@ -1063,12 +1051,13 @@ Resource actions are indicated with the following symbols:
 
 Terraform will perform the following actions:
 
-  + azurerm_resource_group.hashitraining
-      id:       <computed>
-      location: "centralus"
-      name:     "yourname-workshop"
-      tags.%:   <computed>
-
+  # azurerm_resource_group.hashitraining will be created
+  + resource "azurerm_resource_group" "hashitraining" {
+      + id       = (known after apply)
+      + location = "eastus"
+      + name     = "student1-p66-workshop-workshop"
+      + tags     = (known after apply)
+    }
 
 Plan: 1 to add, 0 to change, 0 to destroy.
 ------------------------------------------------------------------------
@@ -1091,18 +1080,15 @@ terraform apply
 Output:
 ```tex
 ...
-Plan: 1 to add, 0 to change, 0 to destroy.
-
-Do you want to perform these actions?
+Do you want to perform these actions in workspace "student1-workspace"?
   Terraform will perform the actions described above.
   Only 'yes' will be accepted to approve.
+
   Enter a value: yes
 
-  azurerm_resource_group.hashitraining: Creating...
-  location: "" => "centralus"
-  name:     "" => "yourname-workshop"
-  tags.%:   "" => "<computed>"
-azurerm_resource_group.hashitraining: Creation complete after 1s (ID: /subscriptions/c0a607b2-6372-4ef3-abdb-...ourceGroups/yourname-workshop)
+2019/08/09 09:18:20 [DEBUG] Using modified User-Agent: Terraform/0.12.2 PTFE/54ee801
+azurerm_resource_group.hashitraining: Creating...
+azurerm_resource_group.hashitraining: Creation complete after 1s [id=/subscriptions/14692f20-9428-451b-8298-102ed4e39c2a/resourceGroups/student1-test-workshop-workshop]
 
 Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
 ```
@@ -1179,17 +1165,42 @@ terraform destroy
 
 Output:
 ```tex
-Do you really want to destroy all resources?
+Error: Failed to create run: Invalid Attribute
+
+Infrastructure is not destroyable: must create a TFE environment variable CONFIRM_DESTROY=1
+```
+
+???
+**With Terraform Enterprise, you must set the CONFIRM_DESTROY variable to 1 in your workspace to run destroy**
+
+---
+name: terraform-destroy-2
+Terraform Destroy
+-------------------------
+Create the variable in the TFE UI and run the destroy command again.
+
+Command:
+```powershell
+terraform destroy
+```
+
+Output:
+```tex
+Do you really want to destroy all resources in workspace "student1-workspace"?
   Terraform will destroy all your managed infrastructure, as shown above.
   There is no undo. Only 'yes' will be accepted to confirm.
 
   Enter a value: yes
 
-Destroy complete! Resources: 0 destroyed.
+2019/08/09 09:24:24 [DEBUG] Using modified User-Agent: Terraform/0.12.2 PTFE/54ee801
+azurerm_resource_group.hashitraining: Destroying... [id=/subscriptions/14692f20-9428-451b-8298-102ed4e39c2a/resourceGroups/student1-test-workshop-workshop]
+azurerm_resource_group.hashitraining: Destruction complete after 46s
+
+Apply complete! Resources: 0 added, 0 changed, 1 destroyed.
 ```
 
 ???
-**Terraform can just as easily destroy infrastructure as create it. With great power comes great responsibility!**
+**With Terraform Enterprise, you must set the CONFIRM_DESTROY variable to 1 in your workspace to run destroy**
 
 ---
 name: we-can-rebuild-him
@@ -1204,11 +1215,9 @@ terraform apply -auto-approve
 
 Output:
 ```tex
+2019/08/09 09:27:50 [DEBUG] Using modified User-Agent: Terraform/0.12.2 PTFE/54ee801
 azurerm_resource_group.hashitraining: Creating...
-  location: "" => "centralus"
-  name:     "" => "yourname-workshop"
-  tags.%:   "" => "<computed>"
-azurerm_resource_group.hashitraining: Creation complete after 1s (ID: /subscriptions/c0a607b2-6372-4ef3-abdb-...ourceGroups/yourname-workshop)
+azurerm_resource_group.hashitraining: Creation complete after 1s [id=/subscriptions/14692f20-9428-451b-8298-102ed4e39c2a/resourceGroups/student1-test-workshop-workshop]
 
 Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
 ```
@@ -1248,10 +1257,15 @@ resource "azurerm_resource_group" "hashitraining" {
 
 Note how the tag is added by modifying the existing resource:
 ```tex
-azurerm_resource_group.hashitraining: Modifying... (ID: /subscriptions/c0a607b2-6372-4ef3-abdb-...ourceGroups/yourname-workshop)
-  tags.%:           "0" => "1"
-  tags.environment: "" => "Production"
-azurerm_resource_group.hashitraining: Modifications complete after 0s (ID: /subscriptions/c0a607b2-6372-4ef3-abdb-...ourceGroups/yourname-workshop)
+# azurerm_resource_group.hashitraining will be updated in-place
+~ resource "azurerm_resource_group" "hashitraining" {
+      id       = "/subscriptions/14692f20-9428-451b-8298-102ed4e39c2a/resourceGroups/student1-p66-workshop-workshop"
+      location = "eastus"
+      name     = "student1-p66-workshop-workshop"
+    ~ tags     = {
+        + "environment" = "Production"
+      }
+  }
 ```
 
 ???
@@ -1311,17 +1325,9 @@ terraform apply -auto-approve
 
 Output:
 ```tex
-azurerm_resource_group.hashitraining: Refreshing state... (ID: /subscriptions/c0a607b2-6372-4ef3-abdb-...ourceGroups/yourname-workshop)
 azurerm_virtual_network.vnet: Creating...
-  address_space.#:     "" => "1"
-  address_space.0:     "" => "10.0.0.0/16"
-  location:            "" => "centralus"
-  name:                "" => "yourname-vnet"
-  resource_group_name: "" => "yourname-workshop"
-  subnet.#:            "" => "<computed>"
-  tags.%:              "" => "<computed>"
-azurerm_virtual_network.vnet: Still creating... (10s elapsed)
-azurerm_virtual_network.vnet: Creation complete after 10s (ID: /subscriptions/c0a607b2-6372-4ef3-abdb-...twork/virtualNetworks/yourname-vnet)
+azurerm_virtual_network.vnet: Still creating... [10s elapsed]
+azurerm_virtual_network.vnet: Creation complete after 12s [id=/subscriptions/14692f20-9428-451b-8298-102ed4e39c2a/resourceGroups/student1-p66-workshop-workshop/providers/Microsoft.Network/virtualNetworks/student1-p66-workshop-vnet]
 
 Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
 ```
@@ -1333,9 +1339,9 @@ The auto-approve flag is so we don't have to type 'yes' every time we run terraf
 name: chapter-3c-lab
 .center[.lab-header[👩🏽‍💻 Lab Exercise 3c: Build the Vault Lab]]
 <br><br><br>
-Go through the rest of the **main.tf** file and uncomment all of the terraform resources.
+Go through the rest of the **main.tf** file and uncomment all of the terraform resources. Please also do the same for **outputs.tf**.
 
-Alternatively, you can copy all of the contents of the **main.tf.completed** file into your **main.tf** file. Just make sure you overwrite the entire file and save it.
+Alternatively, you can copy all of the contents of the **main.tf.completed** file into your **main.tf** file. Just make sure you overwrite the entire file and save it. This can also be done with **outputs.tf.completed** into **outputs.tf**.
 
 Run **`terraform apply`** again to build out the rest of your lab environment.
 
@@ -1376,8 +1382,59 @@ resource "azurerm_subnet" "subnet" {
 name: sentinel
 Sentinel - Soft Failure
 -------------------------
-REPLACE ME REPLACE ME
 
+Unlike previous applies, this apply will fail with a "policy failure"
+
+```tex
+terraform apply -auto-approve
+```
+
+Output:
+```tex
+## Policy 1: Azure-Global-Policies/restrict-vm-size.sentinel (soft-mandatory)
+
+Result: false
+
+Description: This policy uses the Sentinel tfplan import to require that
+all Azure VMs have vm sizes from an allowed list
+
+Print messages:
+
+Resource azurerm_virtual_machine.vault[0] has attribute vm_size with value Standard_B1s that is not in the allowed list: ["Standard_A1" "Standard_A2" "Standard_D1_v2" "Standard_D2_v2"]
+
+
+Error: Organization policy check soft failed.
+```
+
+Lets take a look at what this looks like in the Terraform Enterpirse UI
+
+---
+name: sentinel
+Sentinel - Override Soft
+-------------------------
+
+When looking in your workspace you will find the top run is in "Policy Override" state.
+
+.center[![:scale 60%](images/tfe-override.png)]
+
+This simply means that the sentinel check (in this case, an allowed list of instance types) has failed but can be overridden.
+
+To override, simply choose the run, scroll to the bottom and choose "Override & Continue". You will then need to "Confirm & Apply" to complete the terraform run.
+
+---
+name: sentinel
+Sentinel - Enforcement Options
+-------------------------
+
+Sentinel comes in three enforcement modes
+
+1) Advisory - Lets you know of a failure, but continues as normal
+
+2) Soft Failure - This is what you just experienced, It will halt a run, but with the right permissions, can be overridden.
+
+3) Hard Failure - This type cannot be overridden.
+
+For this class you were granted the right permissions to override. In a real enterprise company this permission would usually be reserved for a security or potentially devops team to decide.
 ---
 name: chapter-3-review
 📝 Chapter 3 Review
@@ -1499,115 +1556,13 @@ EOF
 **This bit here with the EOF is an example of a HEREDOC. It allows you store multi-line text in an output.**
 
 ---
-name: terraform-outputs
-The Outputs File
--------------------------
-Open up the outputs.tf file in Visual Studio Code. Uncomment all of the outputs. Save the file.
-
-```terraform
-output "Vault_Server_URL" {
-  value = "http://${azurerm_public_ip.vault-pip.fqdn}:8200"
-}
-
-output "MySQL_Server_FQDN" {
-  value = "${azurerm_mysql_server.mysql.fqdn}"
-}
-
-output "Instructions" {
-  value = <<EOF
-
-##############################################################################
-# Connect to your Linux Virtual Machine
-#
-# Run the command below to SSH into your server. You can also use PuTTY or any
-# other SSH client. Your password is: ${var.admin_password}
-##############################################################################
-
-ssh ${var.admin_username}@${azurerm_public_ip.vault-pip.fqdn}
-
-EOF
-}
-```
-???
-The bit with EOF is called a heredoc. This is how you add multiple lines or a paragraph of text to your outputs.
-
----
-name: terraform-refresh
-Terraform Refresh
--------------------------
-Run the **`terraform refresh`** command again to show the outputs. You will also see these outputs every time you run **`terraform apply`**.
-
-Command:
-```powershell
-terraform refresh
-```
-
-Output:
-```tex
-Outputs:
-
-Instructions =
-##############################################################################
-# Connect to your Linux Virtual Machine
-#
-# Run the command below to SSH into your server. You can also use PuTTY or any
-# other SSH client. Your password is: Password123!
-##############################################################################
-
-ssh hashicorp@yourname.centralus.cloudapp.azure.com
-
-MySQL_Server_FQDN = yourname-mysql-server.mysql.database.azure.com
-Vault_Server_URL = http://yourname.centralus.cloudapp.azure.com:8200
-```
-
----
 name: terraform-output
 Terraform Output
 -------------------------
-If you just want to see the outputs again, use the **`terraform output`** subcommand.
+With enterprise, to see your outputs, simply visit the UI, choose the **run** you are interested in seeing, and view the **Apply Finished** console output.
 
-Command:
-```powershell
-terraform output
-```
+.center[![:scale 85%](images/tfe-applyfinished.png)]
 
-Output:
-```tex
-Outputs:
-
-Instructions =
-##############################################################################
-# Connect to your Linux Virtual Machine
-#
-# Run the command below to SSH into your server. You can also use PuTTY or any
-# other SSH client. Your password is: Password123!
-##############################################################################
-
-ssh hashicorp@yourname.centralus.cloudapp.azure.com
-
-MySQL_Server_FQDN = yourname-mysql-server.mysql.database.azure.com
-Vault_Server_URL = http://yourname.centralus.cloudapp.azure.com:8200
-```
-
----
-name: terraform-output-2
-Terraform Output - Single Value
--------------------------
-<br><br><br><br>
-If you only want to fetch one of the outputs, use this syntax:
-
-Command:
-```powershell
-terraform output Vault_Server_URL
-```
-
-Output:
-```tex
-http://yourname.centralus.cloudapp.azure.com:8200
-```
-
-???
-**The name of the variable here is CaSe Sensitive. Make sure you copy it exactly.**
 
 ---
 name: chapter-4a-lab
@@ -1835,9 +1790,9 @@ Manage and Change Infrastructure State
 
 ---
 name: terraform-state
-Terraform State
+Terraform State in Enterprise
 -------------------------
-Terraform is a _stateful_ application. This means that it keeps track of everything you build inside of a **state file**. You may have noticed the terraform.tfstate and terraform.tfstate.backup files that appeared inside your working directory.
+Terraform is a _stateful_ application. This means that it keeps track of everything you build inside of a **state file**. In enterprise, this is stored within the enterprise UI. Lets take a look at one in the UI. Visit your **workspace** and then choose **states** choosing any state from this will show you the current known state of your infrastructure at that run point.
 
 The state file is Terraform's source of record for everything it knows about.
 
@@ -1858,20 +1813,6 @@ The state file is Terraform's source of record for everything it knows about.
                   "type": "string",
                   "value": "labtest1-mysql-server.mysql.database.azure.com"
 }}}]}
-```
-
----
-name: terraform-refresh
-Terraform Refresh
--------------------------
-Sometimes infrastructure may be changed outside of Terraform's control. Virtual machines could be deleted, firewall rules changed, hardware failures could occur causing your infrastructure to look different than what's in the state file.
-
-The state file represents the *last known* state of the infrastructure. If you'd like to check and see if the state file still matches what you built, you can use the **terraform refresh** command.
-
-Note that this does *not* update your infrastructure, it simply updates the state file.
-
-```bash
-terraform refresh
 ```
 
 ---
@@ -1941,7 +1882,10 @@ REPLACE ME REPLACE ME
 name: vcs-connection
 VCS Connection
 -------------------------
-REPLACE ME REPLACE ME
+Integration with VCS adds an additional layer of automation to your terraform with enterprise.
+This feature allows you to simply work within your VCS provider and allow terraform to monitor and run changes automatically
+
+.center[![:scale 85%](images/tfe-vcs2.png)]
 
 ---
 name: terraform-destroy-2
