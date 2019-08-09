@@ -665,7 +665,7 @@ As part of setup for this workshop, we need to take a look at the *main.tf* and 
 ```terraform
 terraform {
   backend "remote" {
-    organization = "ORAGANIZATON_NAME"
+    organization = "ORGANIZATON_NAME"
     hostname     = "PTFE_SERVER"
     token        = "PTFE_TOKEN"
     workspaces {
